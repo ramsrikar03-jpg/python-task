@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Veloce Cinema - My Bookings{% endblock %}
+
+{% block content %}
+<div class="history-container">
+    <div class="section-header">
+        <h1>Your Booking History</h1>
+        <p>Manage and view all your booked cinema tickets.</p>
+    </div>
+
+    {% if bookings %}
+        <div class="bookings-list">
+            {% for booking in bookings %}
+                <div class="booking-history-card">
+                    <div class="bh-poster-column">
+                        <img src="{{ url_for('static', filename='img/' + booking.show.movie.poster_path) }}" alt="{{ booking.show.movie.title }}">
+                    </div>
+                    <div class="bh-details-column">
+                        <span class="bh-status-badge"><i class="fa-solid fa-circle-check"></i> Confirmed</span>
+                        <h2 class="bh-movie-title">{{ booking.show.movie.title }}</h2>
+                        
+                        <div class="bh-grid">
+                            <div class="bh-item">
+                                <span class="label">Date & Time</span>
+                                <span class="value"><i class="fa-regular fa-calendar"></i> {{ booking.show.show_date }} @ {{ booking.show.show_time }}</span>
+                            </div>
+                            <div class="bh-item">
+                                <span class="label">Hall / Screen</span>
+                                <span class="value"><i class="fa-solid fa-chalkboard"></i> {{ booking.show.hall }}</span>
+                            </div>
+                            <div class="bh-item">
+                                <span class="label">Selected Seats</span>
+                                <span class="value"><i class="fa-solid fa-couch"></i> 
+                                    {% for ticket in booking.tickets %}
+                                        {{ ticket.seat_row }}{{ ticket.seat_num }}{% if not loop.last %}, {% endif %}
+                                    {% endfor %}
+                                </span>
+                            </div>
+                            <div class="bh-item">
+                                <span class="label">Total Cost</span>
+                                <span class="value price"><i class="fa-solid fa-dollar-sign"></i> {{ "%.2f" | format(booking.total_price) }}</span>
+                            </div>
+                        </div>
+
+                        <div class="bh-footer">
+                            <span class="bh-timestamp">Booked on: {{ booking.booking_time.strftime('%Y-%m-%d %H:%M') }}</span>
+                            <a href="{{ url_for('booking_confirmation', booking_id=booking.id) }}" class="btn btn-outline btn-sm">
+                                <i class="fa-solid fa-ticket-simple"></i> View Ticket
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-history-card">
+            <i class="fa-solid fa-ticket-simple empty-icon"></i>
+            <h3>No Bookings Found</h3>
+            <p>You haven't booked any movie tickets yet. Explore movies and showtimes to book!</p>
+            <a href="{{ url_for('home') }}" class="btn btn-primary mt-3">Explore Movies</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

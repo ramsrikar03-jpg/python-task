@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-6">
+        <a href="{{ url_for('movies') }}" class="text-sm text-slate-400 hover:text-white">&larr; Back to Movies</a>
+        <h2 class="text-3xl font-bold mt-2">{{ movie.title }}</h2>
+        <p class="text-slate-400">Showtime: <span class="text-rose-500 font-medium">{{ timing }}</span></p>
+    </div>
+
+    <div class="w-full bg-slate-800 text-center text-xs font-bold tracking-widest text-slate-400 py-1.5 rounded-full shadow-[0_15px_30px_-5px_rgba(244,63,94,0.15)] uppercase border-t border-rose-500/30 mb-16">
+        Cinema Screen
+    </div>
+
+    <form action="{{ url_for('book') }}" method="POST" class="flex flex-col items-center">
+        <input type="hidden" name="movie_id" value="{{ movie_id }}">
+        <input type="hidden" name="timing" value="{{ timing }}">
+
+        <div class="grid grid-cols-8 gap-3 max-w-lg mx-auto mb-8">
+            {% for row in ['A', 'B', 'C', 'D', 'E'] %}
+                {% for col in range(1, 9) %}
+                    {% set seat_id = row ~ col %}
+                    {% set is_booked = seat_id in booked_seats %}
+                    
+                    <label class="relative">
+                        <input type="checkbox" name="seats" value="{{ seat_id }}" {% if is_booked %}disabled{% endif %} class="peer hidden">
+                        <div class="w-10 h-10 flex items-center justify-center text-xs font-bold rounded-lg border tracking-tight cursor-pointer transition
+                            {% if is_booked %}
+                                bg-slate-800 text-slate-600 border-slate-800 cursor-not-allowed
+                            {% else %}
+                                bg-slate-900 border-slate-700 text-slate-300 hover:border-rose-500 peer-checked:bg-rose-600 peer-checked:border-rose-600 peer-checked:text-white
+                            {% endif %}">
+                            {{ seat_id }}
+                        </div>
+                    </label>
+                {% endfor %}
+            {% endfor %}
+        </div>
+
+        <div class="flex space-x-6 text-sm mb-8 text-slate-400">
+            <div class="flex items-center space-x-2"><div class="w-4 h-4 bg-slate-900 border border-slate-700 rounded"></div> <span>Available</span></div>
+            <div class="flex items-center space-x-2"><div class="w-4 h-4 bg-rose-600 rounded"></div> <span>Selected</span></div>
+            <div class="flex items-center space-x-2"><div class="w-4 h-4 bg-slate-800 rounded"></div> <span>Reserved</span></div>
+        </div>
+
+        <button type="submit" class="w-full max-w-md bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-emerald-600/20 transition duration-200 text-lg">
+            Confirm and Pay Ticket
+        </button>
+    </form>
+</div>
+{% endblock %}

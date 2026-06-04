@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-xl mx-auto mt-8 bg-slate-900 border-2 border-dashed border-slate-800 p-8 rounded-2xl relative overflow-hidden">
+    <div class="absolute -left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-slate-950 rounded-full"></div>
+    <div class="absolute -right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-slate-950 rounded-full"></div>
+
+    <div class="text-center mb-6">
+        <div class="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto text-3xl font-bold mb-4">✓</div>
+        <h2 class="text-3xl font-extrabold tracking-tight">Booking Confirmed!</h2>
+        <p class="text-sm text-slate-400 mt-1">Order Ref: #CP-{{ booking.booking_id }}029</p>
+    </div>
+
+    <div class="border-t border-b border-slate-800 py-6 my-6 space-y-4">
+        <div class="flex justify-between"><span class="text-slate-400">Movie Title</span><span class="font-bold text-white text-right">{{ booking.movie_title }}</span></div>
+        <div class="flex justify-between"><span class="text-slate-400">Showtime</span><span class="font-medium text-rose-400">{{ booking.timing }}</span></div>
+        <div class="flex justify-between">
+            <span class="text-slate-400">Seats Reserved</span>
+            <span class="font-mono bg-slate-950 px-2.5 py-0.5 rounded text-emerald-400 font-bold">
+                {{ booking.seats | join(', ') }}
+            </span>
+        </div>
+    </div>
+
+    <div class="flex justify-between items-center bg-slate-950 p-4 rounded-xl mb-6">
+        <span class="text-sm text-slate-400 uppercase tracking-wider font-semibold">Total Paid</span>
+        <span class="text-2xl font-black text-emerald-400">${{ "%.2f"|format(booking.total_price) }}</span>
+    </div>
+
+    <div class="text-center">
+        <a href="{{ url_for('movies') }}" class="inline-block w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-3 rounded-xl transition">
+            Book Another Movie
+        </a>
+    </div>
+</div>
+{% endblock %}

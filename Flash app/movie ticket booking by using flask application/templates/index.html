@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}Veloce Cinema - Now Showing{% endblock %}
+
+{% block content %}
+<section class="hero-banner">
+    <div class="hero-content">
+        <span class="hero-badge"><i class="fa-solid fa-fire-flame-curved"></i> Cinematic Highlights</span>
+        <h1>Unlock Next-Gen Entertainment</h1>
+        <p>Book premium tickets to the season's biggest blockbusters. Ultra-luxurious seating, crisp 4K laser projection, and Dolby Atmos audio.</p>
+        <div class="hero-actions">
+            <a href="#now-showing" class="btn btn-primary btn-large">Browse Movies</a>
+        </div>
+    </div>
+</section>
+
+<section id="now-showing" class="movie-section">
+    <div class="section-header">
+        <h2>Now Showing</h2>
+        <p>Select a movie to view details and book your showtimes.</p>
+    </div>
+
+    <!-- Movie Filter Tab -->
+    <div class="genre-filter-tabs">
+        <button class="filter-tab active" onclick="filterGenre('all')">All Genres</button>
+        <button class="filter-tab" onclick="filterGenre('Sci-Fi')">Sci-Fi</button>
+        <button class="filter-tab" onclick="filterGenre('Action')">Action</button>
+        <button class="filter-tab" onclick="filterGenre('Thriller')">Thriller</button>
+    </div>
+
+    <div class="movies-grid">
+        {% for movie in movies %}
+        <div class="movie-card" data-genre="{{ movie.genre }}">
+            <div class="movie-poster-container">
+                <img src="{{ url_for('static', filename='img/' + movie.poster_path) }}" alt="{{ movie.title }} Poster" class="movie-poster">
+                <div class="movie-poster-overlay">
+                    <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" class="btn btn-primary"><i class="fa-solid fa-calendar-days"></i> Get Tickets</a>
+                </div>
+                <div class="movie-rating-badge">
+                    <i class="fa-solid fa-star"></i> {{ movie.rating }}
+                </div>
+            </div>
+            <div class="movie-details">
+                <div class="movie-meta">
+                    <span class="movie-genre-badge">{{ movie.genre.split('/')[0].strip() }}</span>
+                    <span class="movie-duration"><i class="fa-regular fa-clock"></i> {{ movie.duration }} min</span>
+                </div>
+                <h3 class="movie-title"><a href="{{ url_for('movie_detail', movie_id=movie.id) }}">{{ movie.title }}</a></h3>
+                <p class="movie-excerpt">{{ movie.description[:100] }}...</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="experience-promo">
+    <div class="promo-card">
+        <div class="promo-icon"><i class="fa-solid fa-couch"></i></div>
+        <h3>D-BOX Recliners</h3>
+        <p>Seats calibrated to move in sync with the onscreen action.</p>
+    </div>
+    <div class="promo-card">
+        <div class="promo-icon"><i class="fa-solid fa-volume-high"></i></div>
+        <h3>Dolby Atmos</h3>
+        <p>Crystal-clear 3D sound waves that flow completely around you.</p>
+    </div>
+    <div class="promo-card">
+        <div class="promo-icon"><i class="fa-solid fa-burger"></i></div>
+        <h3>Gourmet Dining</h3>
+        <p>Artisanal dishes and premium mocktails served straight to your seat.</p>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function filterGenre(genre) {
+        // Toggle active class on tabs
+        const tabs = document.querySelectorAll('.filter-tab');
+        tabs.forEach(tab => {
+            if(tab.textContent.includes(genre) || (genre === 'all' && tab.textContent.includes('All'))) {
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
+            }
+        });
+
+        // Filter movie cards
+        const cards = document.querySelectorAll('.movie-card');
+        cards.forEach(card => {
+            const cardGenre = card.getAttribute('data-genre').toLowerCase();
+            if (genre === 'all' || cardGenre.includes(genre.toLowerCase())) {
+                card.style.display = 'block';
+                // Add soft transition entry
+                card.style.opacity = '0';
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transition = 'opacity 0.4s ease';
+                }, 50);
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}

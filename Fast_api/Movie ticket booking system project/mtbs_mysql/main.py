@@ -1,44 +1,39 @@
 # ============================================================
-# 🎬 Movie Ticket Booking System
+# 🎬 MOVIE TICKET BOOKING SYSTEM
 # FastAPI + MySQL + SQLAlchemy
 # ============================================================
  
-# Install Packages:
+# INSTALL:
 # pip install fastapi uvicorn sqlalchemy pymysql
  
-# Run Server:
+# RUN:
 # uvicorn main:app --reload
  
-# Swagger UI:
-# http://127.0.0.1:8000/docs
- 
-# ============================================================
-# 📦 Imports
 # ============================================================
  
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy import (
     create_engine,
     Column,
     Integer,
     String,
-    Float
+    Float,
+    ForeignKey
 )
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.orm import sessionmaker
+ 
+from sqlalchemy.orm import (
+    declarative_base,
+    sessionmaker,
+    relationship,
+    Session
+)
  
 # ============================================================
-# 🚀 FastAPI App
+# DATABASE CONNECTION
 # ============================================================
  
-app = FastAPI()
- 
-# ============================================================
-# 🌐 MySQL Connection
-# ============================================================
- 
-DATABASE_URL = "mysql+pymysql://root:tiger@localhost/movie_booking_db"
+DATABASE_URL = "mysql+pymysql://root:tiger@localhost/movie_bookings_db"
  
 engine = create_engine(DATABASE_URL)
  
@@ -51,100 +46,234 @@ SessionLocal = sessionmaker(
 Base = declarative_base()
  
 # ============================================================
-# 🧱 MySQL Models
+# FASTAPI APP
 # ============================================================
  
-class MovieDB(Base):
+app = FastAPI(
+    title="Movie Ticket Booking System",
+    version="2.0"
+)
+ 
+# ============================================================
+# DATABASE SESSION
+# ============================================================
+ 
+def get_db():
+ 
+    db = SessionLocal()
+ 
+    try:
+        yield db
+ 
+    finally:
+        db.close()
+ 
+# ============================================================
+# MODELS
+# ============================================================
+ 
+class Movie(Base):
  
     __tablename__ = "movies"
-    movie_id = Column(Integer, primary_key=True)
+ 
+    movie_id = Column(Integer, primary_key=True, index=True)
     movie_name = Column(String(100))
-    theater_name = Column(String(100))
-    show_time = Column(String(50))
-    ticket_price = Column(Float)
-    available_seats = Column(Integer)
-    language = Column(String(50))
+    genre = Column(String(50))
     rating = Column(Float)
+    duration = Column(String(20))
  
  
-class BookingDB(Base):
+class Theatre(Base):
+ 
+    __tablename__ = "theatres"
+ 
+    theatre_id = Column(Integer, primary_key=True, index=True)
+ 
+    theatre_name = Column(String(100))
+    location = Column(String(100))
+ 
+ 
+class Show(Base):
+ 
+    __tablename__ = "shows"
+ 
+    show_id = Column(Integer, primary_key=True, index=True)
+ 
+    movie_id = Column(
+        Integer,
+        ForeignKey("movies.movie_id")
+    )
+ 
+    theatre_id = Column(
+        Integer,
+        ForeignKey("theatres.theatre_id")
+    )
+ 
+    screen_name = Column(String(50))
+ 
+    show_name = Column(String(50))
+ 
+    timing = Column(String(50))
+ 
+    show_date = Column(String(50))
+ 
+    # GOLD
+ 
+    gold_seats = Column(Integer)
+    gold_price = Column(Integer)
+ 
+    booked_gold = Column(Integer, default=0)
+    cancelled_gold = Column(Integer, default=0)
+    remaining_gold = Column(Integer)
+ 
+    # SILVER
+ 
+    silver_seats = Column(Integer)
+    silver_price = Column(Integer)
+ 
+    booked_silver = Column(Integer, default=0)
+    cancelled_silver = Column(Integer, default=0)
+    remaining_silver = Column(Integer)
+ 
+    # RECLINER
+ 
+    recliner_seats = Column(Integer)
+    recliner_price = Column(Integer)
+ 
+    booked_recliner = Column(Integer, default=0)
+    cancelled_recliner = Column(Integer, default=0)
+    remaining_recliner = Column(Integer)
+ 
+    movie = relationship("Movie")
+    theatre = relationship("Theatre")
+ 
+ 
+class Booking(Base):
  
     __tablename__ = "bookings"
+ 
     booking_id = Column(Integer, primary_key=True, index=True)
-    movie_id = Column(Integer)
+ 
     customer_name = Column(String(100))
-    tickets = Column(Integer)
-    total_amount = Column(Float)
-    booking_status = Column(String(50))
+ 
+    show_id = Column(
+        Integer,
+        ForeignKey("shows.show_id")
+    )
+ 
+    seat_type = Column(String(50))
+ 
+    seats_booked = Column(Integer)
+ 
+    total_price = Column(Integer)
+ 
+    booking_status = Column(
+        String(20),
+        default="BOOKED"
+    )
+ 
+    show = relationship("Show")
  
 # ============================================================
-# 🛠 Create Tables
+# CREATE TABLES
 # ============================================================
  
+# Drop and recreate tables to ensure the database schema matches models.
+# WARNING: This will remove existing data in the tables — intended for local/dev use.
+Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
  
 # ============================================================
-# 🧾 Pydantic Schemas
+# PYDANTIC SCHEMAS
 # ============================================================
  
-class Movie(BaseModel):
+class MovieSchema(BaseModel):
  
     movie_id: int
     movie_name: str
-    theater_name: str
-    show_time: str
-    ticket_price: float
-    available_seats: int
-    language: str
+    genre: str
     rating: float
+    duration: str
  
  
-class Booking(BaseModel):
+class TheatreSchema(BaseModel):
+ 
+    theatre_id: int
+    theatre_name: str
+    location: str
+ 
+ 
+class ShowSchema(BaseModel):
+ 
+    movie_id: int
+    theatre_id: int
+ 
+    screen_name: str
+ 
+    show_name: str
+    timing: str
+ 
+    show_date: str
+ 
+    silver_seats: int
+    silver_price: int
+ 
+    gold_seats: int
+    gold_price: int
+ 
+    recliner_seats: int
+    recliner_price: int
+ 
+ 
+class BookingSchema(BaseModel):
+    booking_id: int
  
     customer_name: str
-    tickets: int
+ 
+    show_id: int
+ 
+    seat_type: str
+ 
+    seats: int
  
 # ============================================================
-# 🏠 Home Route
+# HOME
 # ============================================================
  
 @app.get("/")
 def home():
  
     return {
-        "message": "Movie Ticket Booking System Using MySQL 🚀"
+        "message": "Movie Ticket Booking System"
     }
  
 # ============================================================
-# ✅ 1. ADD MOVIE
+# 1. ADD MOVIE
 # ============================================================
  
 @app.post("/movies")
-def add_movie(movie: Movie):
+def add_movie(
+    movie: MovieSchema,
+    db: Session = Depends(get_db)
+):
  
-    db = SessionLocal()
- 
-    existing_movie = db.query(MovieDB).filter(
-        MovieDB.movie_id == movie.movie_id
+    existing_movie = db.query(Movie).filter(
+        Movie.movie_id == movie.movie_id
     ).first()
  
     if existing_movie:
  
         raise HTTPException(
             status_code=400,
-            detail="Movie ID already exists"
+            detail="Movie ID Already Exists"
         )
  
-    new_movie = MovieDB(
- 
+    new_movie = Movie(
         movie_id=movie.movie_id,
         movie_name=movie.movie_name,
-        theater_name=movie.theater_name,
-        show_time=movie.show_time,
-        ticket_price=movie.ticket_price,
-        available_seats=movie.available_seats,
-        language=movie.language,
-        rating=movie.rating
+        genre=movie.genre,
+        rating=movie.rating,
+        duration=movie.duration
     )
  
     db.add(new_movie)
@@ -152,96 +281,96 @@ def add_movie(movie: Movie):
     db.commit()
  
     return {
-        "message": "Movie added successfully"
+        "message": "Movie Added Successfully"
     }
  
 # ============================================================
-# ✅ 2. GET ALL MOVIES
+# 2. GET ALL MOVIES
 # ============================================================
  
 @app.get("/movies")
-def get_movies():
+def get_all_movies(
+    db: Session = Depends(get_db)
+):
  
-    db = SessionLocal()
- 
-    movies = db.query(MovieDB).all()
+    movies = db.query(Movie).all()
  
     return movies
  
 # ============================================================
-# ✅ 3. GET MOVIE BY ID
+# 3. GET MOVIE BY ID
 # ============================================================
  
 @app.get("/movies/{movie_id}")
-def get_movie(movie_id: int):
+def get_movie_by_id(
+    movie_id: int,
+    db: Session = Depends(get_db)
+):
  
-    db = SessionLocal()
- 
-    movie = db.query(MovieDB).filter(
-        MovieDB.movie_id == movie_id
+    movie = db.query(Movie).filter(
+        Movie.movie_id == movie_id
     ).first()
  
     if not movie:
  
         raise HTTPException(
             status_code=404,
-            detail="Movie not found"
+            detail="Movie Not Found"
         )
  
     return movie
  
 # ============================================================
-# ✅ 4. UPDATE MOVIE
+# 4. UPDATE MOVIE
 # ============================================================
  
 @app.put("/movies/{movie_id}")
-def update_movie(movie_id: int, updated_movie: Movie):
+def update_movie(
+    movie_id: int,
+    updated_movie: MovieSchema,
+    db: Session = Depends(get_db)
+):
  
-    db = SessionLocal()
- 
-    movie = db.query(MovieDB).filter(
-        MovieDB.movie_id == movie_id
+    movie = db.query(Movie).filter(
+        Movie.movie_id == movie_id
     ).first()
  
     if not movie:
  
         raise HTTPException(
             status_code=404,
-            detail="Movie not found"
+            detail="Movie Not Found"
         )
  
     movie.movie_name = updated_movie.movie_name
-    movie.theater_name = updated_movie.theater_name
-    movie.show_time = updated_movie.show_time
-    movie.ticket_price = updated_movie.ticket_price
-    movie.available_seats = updated_movie.available_seats
-    movie.language = updated_movie.language
     movie.rating = updated_movie.rating
+    movie.duration = updated_movie.duration
  
     db.commit()
  
     return {
-        "message": "Movie updated successfully"
+        "message": "Movie Updated Successfully"
     }
  
 # ============================================================
-# ✅ 5. DELETE MOVIE
+# 5. DELETE MOVIE
 # ============================================================
  
 @app.delete("/movies/{movie_id}")
-def delete_movie(movie_id: int):
+def delete_movie(
+    movie_id: int,
+    db: Session = Depends(get_db)
+):
  
-    db = SessionLocal()
- 
-    movie = db.query(MovieDB).filter(
-        MovieDB.movie_id == movie_id
+    movie = db.query(Movie).filter(
+        Movie.movie_id == movie_id
     ).first()
  
     if not movie:
  
         raise HTTPException(
             status_code=404,
-            detail="Movie not found"
+            detail="Movie Not Found"
         )
  
     db.delete(movie)
@@ -249,48 +378,201 @@ def delete_movie(movie_id: int):
     db.commit()
  
     return {
-        "message": "Movie deleted successfully"
+        "message": "Movie Deleted Successfully"
     }
  
 # ============================================================
-# ✅ 6. BOOK MOVIE TICKET
+# ADD THEATRE
 # ============================================================
  
-@app.post("/book-ticket/{movie_id}")
-def book_ticket(movie_id: int, booking: Booking):
+@app.post("/theatres")
+def add_theatre(
+    theatre: TheatreSchema,
+    db: Session = Depends(get_db)
+):
  
-    db = SessionLocal()
+    new_theatre = Theatre(
+        theatre_id=theatre.theatre_id,
+        theatre_name=theatre.theatre_name,
+        location=theatre.location
+    )
  
-    movie = db.query(MovieDB).filter(
-        MovieDB.movie_id == movie_id
+    db.add(new_theatre)
+ 
+    db.commit()
+ 
+    return {
+        "message": "Theatre Added Successfully"
+    }
+ 
+# ============================================================
+# ADD SHOW
+# ============================================================
+ 
+@app.post("/shows")
+def add_show(
+    show: ShowSchema,
+    db: Session = Depends(get_db)
+):
+ 
+    movie = db.query(Movie).filter(
+        Movie.movie_id == show.movie_id
     ).first()
  
     if not movie:
  
         raise HTTPException(
             status_code=404,
-            detail="Movie not found"
+            detail="Movie Not Found"
         )
  
-    if movie.available_seats < booking.tickets:
+    theatre = db.query(Theatre).filter(
+        Theatre.theatre_id == show.theatre_id
+    ).first()
+ 
+    if not theatre:
+ 
+        raise HTTPException(
+            status_code=404,
+            detail="Theatre Not Found"
+        )
+ 
+    new_show = Show(
+ 
+        movie_id=show.movie_id,
+        theatre_id=show.theatre_id,
+ 
+        screen_name=show.screen_name,
+ 
+        show_name=show.show_name,
+ 
+        timing=show.timing,
+ 
+        show_date=show.show_date,
+ 
+        # SILVER
+ 
+        silver_seats=show.silver_seats,
+        silver_price=show.silver_price,
+        booked_silver=0,
+        cancelled_silver=0,
+        remaining_silver=show.silver_seats,
+ 
+        # GOLD
+ 
+        gold_seats=show.gold_seats,
+        gold_price=show.gold_price,
+        booked_gold=0,
+        cancelled_gold=0,
+        remaining_gold=show.gold_seats,
+ 
+        # RECLINER
+ 
+        recliner_seats=show.recliner_seats,
+        recliner_price=show.recliner_price,
+        booked_recliner=0,
+        cancelled_recliner=0,
+        remaining_recliner=show.recliner_seats
+    )
+ 
+    db.add(new_show)
+ 
+    db.commit()
+ 
+    return {
+        "message": "Show Added Successfully"
+    }
+ 
+# ============================================================
+# 6. BOOK MOVIE TICKET
+# ============================================================
+ 
+@app.post("/book-ticket")
+def book_ticket(
+    booking: BookingSchema,
+    db: Session = Depends(get_db)
+):
+ 
+    show = db.query(Show).filter(
+        Show.show_id == booking.show_id
+    ).first()
+ 
+    if not show:
+ 
+        raise HTTPException(
+            status_code=404,
+            detail="Show Not Found"
+        )
+ 
+    total_price = 0
+ 
+    # GOLD
+ 
+    if booking.seat_type.lower() == "gold":
+ 
+        if show.remaining_gold < booking.seats:
+ 
+            raise HTTPException(
+                status_code=400,
+                detail="Gold Seats Not Available"
+            )
+ 
+        show.booked_gold += booking.seats
+        show.remaining_gold -= booking.seats
+ 
+        total_price = booking.seats * show.gold_price
+ 
+    # SILVER
+ 
+    elif booking.seat_type.lower() == "silver":
+ 
+        if show.remaining_silver < booking.seats:
+ 
+            raise HTTPException(
+                status_code=400,
+                detail="Silver Seats Not Available"
+            )
+ 
+        show.booked_silver += booking.seats
+        show.remaining_silver -= booking.seats
+ 
+        total_price = booking.seats * show.silver_price
+ 
+    # RECLINER
+ 
+    elif booking.seat_type.lower() == "recliner":
+ 
+        if show.remaining_recliner < booking.seats:
+ 
+            raise HTTPException(
+                status_code=400,
+                detail="Recliner Seats Not Available"
+            )
+ 
+        show.booked_recliner += booking.seats
+        show.remaining_recliner -= booking.seats
+ 
+        total_price = booking.seats * show.recliner_price
+ 
+    else:
  
         raise HTTPException(
             status_code=400,
-            detail="Not enough seats available"
+            detail="Invalid Seat Type"
         )
  
-    total_amount = booking.tickets * movie.ticket_price
+    new_booking = Booking(
  
-    new_booking = BookingDB(
- 
-        movie_id=movie.movie_id,
         customer_name=booking.customer_name,
-        tickets=booking.tickets,
-        total_amount=total_amount,
-        booking_status="Booked"
-    )
  
-    movie.available_seats -= booking.tickets
+        show_id=booking.show_id,
+ 
+        seat_type=booking.seat_type,
+ 
+        seats_booked=booking.seats,
+ 
+        total_price=total_price
+    )
  
     db.add(new_booking)
  
@@ -298,93 +580,234 @@ def book_ticket(movie_id: int, booking: Booking):
  
     return {
  
-        "message": "Ticket booked successfully",
+        "message": "Ticket Booked Successfully",
  
-        "total_amount": total_amount
+        "total_price": total_price
     }
  
 # ============================================================
-# ✅ 7. CANCEL TICKET
+# 7. CANCEL TICKET
 # ============================================================
  
-@app.post("/cancel-ticket/{booking_id}")
-def cancel_ticket(booking_id: int):
+@app.put("/cancel-booking/{booking_id}")
+def cancel_booking(
+    booking_id: int,
+    db: Session = Depends(get_db)
+):
  
-    db = SessionLocal()
- 
-    booking = db.query(BookingDB).filter(
-        BookingDB.booking_id == booking_id
+    booking = db.query(Booking).filter(
+        Booking.booking_id == booking_id
     ).first()
  
     if not booking:
  
         raise HTTPException(
             status_code=404,
-            detail="Booking not found"
+            detail="Booking Not Found"
         )
  
-    movie = db.query(MovieDB).filter(
-        MovieDB.movie_id == booking.movie_id
+    if booking.booking_status == "CANCELLED":
+ 
+        return {
+            "message": "Already Cancelled"
+        }
+ 
+    show = db.query(Show).filter(
+        Show.show_id == booking.show_id
     ).first()
  
-    # Restore seats
-    movie.available_seats += booking.tickets
+    if booking.seat_type.lower() == "gold":
  
-    # Delete booking
-    db.delete(booking)
+        show.booked_gold -= booking.seats_booked
+        show.cancelled_gold += booking.seats_booked
+        show.remaining_gold += booking.seats_booked
+ 
+    elif booking.seat_type.lower() == "silver":
+ 
+        show.booked_silver -= booking.seats_booked
+        show.cancelled_silver += booking.seats_booked
+        show.remaining_silver += booking.seats_booked
+ 
+    elif booking.seat_type.lower() == "recliner":
+ 
+        show.booked_recliner -= booking.seats_booked
+        show.cancelled_recliner += booking.seats_booked
+        show.remaining_recliner += booking.seats_booked
+ 
+    booking.booking_status = "CANCELLED"
  
     db.commit()
  
     return {
-        "message": "Ticket cancelled successfully"
+        "message": "Booking Cancelled Successfully"
     }
  
 # ============================================================
-# ✅ 8. GET AVAILABLE SHOWS
+# 8. GET AVAILABLE SHOWS
 # ============================================================
  
 @app.get("/available-shows")
-def available_shows():
+def get_available_shows(
+    db: Session = Depends(get_db)
+):
  
-    db = SessionLocal()
- 
-    shows = db.query(MovieDB).filter(
-        MovieDB.available_seats > 0
-    ).all()
+    shows = db.query(Show).all()
  
     return shows
  
 # ============================================================
-# ✅ 9. GET ALL BOOKINGS
+# 9. GET ALL BOOKINGS
 # ============================================================
  
 @app.get("/bookings")
-def get_bookings():
+def get_all_bookings(
+    db: Session = Depends(get_db)
+):
  
-    db = SessionLocal()
- 
-    bookings = db.query(BookingDB).all()
+    bookings = db.query(Booking).all()
  
     return bookings
  
 # ============================================================
-# ✅ 10. SEARCH MOVIE BY NAME
+# 10. SEARCH MOVIE BY NAME
 # ============================================================
  
-@app.get("/search-movie/{name}")
-def search_movie(name: str):
+@app.get("/search-movie/{movie_name}")
+def search_movie(
+    movie_name: str,
+    db: Session = Depends(get_db)
+):
  
-    db = SessionLocal()
- 
-    movies = db.query(MovieDB).filter(
-        MovieDB.movie_name.ilike(f"%{name}%")
+    movies = db.query(Movie).filter(
+        Movie.movie_name.ilike(f"%{movie_name}%")
     ).all()
  
     if not movies:
  
         raise HTTPException(
             status_code=404,
-            detail="Movie not found"
+            detail="Movie Not Found"
         )
  
     return movies
+ 
+# ============================================================
+# 11. TOP RATED MOVIES
+# ============================================================
+ 
+@app.get("/top-rated-movies")
+def top_rated_movies(
+    db: Session = Depends(get_db)
+):
+ 
+    movies = db.query(Movie).order_by(
+        Movie.rating.desc()
+    ).all()
+ 
+    return movies
+ 
+# ============================================================
+# 12. REMAINING SEATS
+# ============================================================
+ 
+@app.get("/remaining-seats/{show_id}")
+def remaining_seats(
+    show_id: int,
+    db: Session = Depends(get_db)
+):
+ 
+    show = db.query(Show).filter(
+        Show.show_id == show_id
+    ).first()
+ 
+    if not show:
+ 
+        raise HTTPException(
+            status_code=404,
+            detail="Show Not Found"
+        )
+ 
+    return {
+ 
+        "Gold Remaining": show.remaining_gold,
+ 
+        "Silver Remaining": show.remaining_silver,
+ 
+        "Recliner Remaining": show.remaining_recliner
+    }
+ 
+# ============================================================
+# 13. BOOKING HISTORY
+# ============================================================
+ 
+@app.get("/booking-history/{customer_name}")
+def booking_history(
+    customer_name: str,
+    db: Session = Depends(get_db)
+):
+ 
+    history = db.query(Booking).filter(
+        Booking.customer_name == customer_name
+    ).all()
+ 
+    if not history:
+ 
+        raise HTTPException(
+            status_code=404,
+            detail="No Booking History Found"
+        )
+ 
+    return history
+ 
+# ============================================================
+# 14. TOTAL REVENUE
+# ============================================================
+ 
+@app.get("/total-revenue")
+def total_revenue(
+    db: Session = Depends(get_db)
+):
+ 
+    bookings = db.query(Booking).filter(
+        Booking.booking_status == "BOOKED"
+    ).all()
+ 
+    revenue = 0
+ 
+    for booking in bookings:
+ 
+        revenue += booking.total_price
+ 
+    return {
+ 
+        "Total Revenue": revenue
+    }
+ 
+# ============================================================
+# DELETE SHOW
+# ============================================================
+ 
+@app.delete("/shows/{show_id}")
+def delete_show(
+    show_id: int,
+    db: Session = Depends(get_db)
+):
+ 
+    show = db.query(Show).filter(
+        Show.show_id == show_id
+    ).first()
+ 
+    if not show:
+ 
+        raise HTTPException(
+            status_code=404,
+            detail="Show Not Found"
+        )
+ 
+    db.delete(show)
+ 
+    db.commit()
+ 
+    return {
+        "message": "Show Deleted Successfully"
+    }

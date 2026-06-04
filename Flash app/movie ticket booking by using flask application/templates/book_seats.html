@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+
+{% block title %}Veloce Cinema - Select Seats{% endblock %}
+
+{% block content %}
+<div class="booking-layout-container">
+    <div class="seat-selection-panel">
+        <a href="{{ url_for('movie_detail', movie_id=show.movie.id) }}" class="back-link">
+            <i class="fa-solid fa-arrow-left"></i> Back to Movie Details
+        </a>
+        
+        <h2>Select Your Seats</h2>
+        <div class="screen-container">
+            <div class="screen-glow"></div>
+            <div class="screen-text">SCREEN THIS WAY</div>
+        </div>
+
+        <!-- Seat Grid -->
+        <div class="seating-grid-wrapper">
+            <div class="seating-grid">
+                <!-- Column numbers header -->
+                <div class="row-label-spacer"></div>
+                {% for col in cols %}
+                    <div class="col-num-label">{{ col }}</div>
+                {% endfor %}
+                <div class="row-label-spacer"></div>
+
+                {% for row in rows %}
+                    <div class="row-letter-label">{{ row }}</div>
+                    {% for col in cols %}
+                        {% set seat_id = row ~ '-' ~ col %}
+                        {% if seat_id in booked_seats %}
+                            <div class="seat occupied" data-seat-id="{{ seat_id }}" title="Seat {{ row }}{{ col }} (Occupied)">
+                                <i class="fa-solid fa-couch"></i>
+                            </div>
+                        {% else %}
+                            <div class="seat available" data-seat-id="{{ seat_id }}" onclick="toggleSeat(this)" title="Seat {{ row }}{{ col }}">
+                                <i class="fa-solid fa-couch"></i>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                    <div class="row-letter-label">{{ row }}</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="seating-legend">
+            <div class="legend-item">
+                <div class="legend-box available"><i class="fa-solid fa-couch"></i></div>
+                <span>Available</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box selected"><i class="fa-solid fa-couch"></i></div>
+                <span>Selected</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box occupied"><i class="fa-solid fa-couch"></i></div>
+                <span>Occupied</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar summary panel -->
+    <div class="booking-summary-panel">
+        <div class="summary-card">
+            <h3>Booking Summary</h3>
+            <div class="summary-movie-info">
+                <img src="{{ url_for('static', filename='img/' + show.movie.poster_path) }}" alt="Poster" class="summary-poster">
+                <div>
+                    <h4>{{ show.movie.title }}</h4>
+                    <p class="summary-genre">{{ show.movie.genre }}</p>
+                </div>
+            </div>
+            
+            <div class="summary-details-list">
+                <div class="summary-detail-item">
+                    <span><i class="fa-solid fa-calendar"></i> Date:</span>
+                    <strong>{{ show.show_date }}</strong>
+                </div>
+                <div class="summary-detail-item">
+                    <span><i class="fa-solid fa-clock"></i> Showtime:</span>
+                    <strong>{{ show.show_time }}</strong>
+                </div>
+                <div class="summary-detail-item">
+                    <span><i class="fa-solid fa-chalkboard"></i> Hall:</span>
+                    <strong>{{ show.hall }}</strong>
+                </div>
+                <div class="summary-detail-item">
+                    <span><i class="fa-solid fa-ticket"></i> Seat Price:</span>
+                    <strong>${{ "%.2f" | format(show.price) }}</strong>
+                </div>
+            </div>
+
+            <div class="summary-selection-info">
+                <div class="selected-seats-container">
+                    <span>Selected Seats:</span>
+                    <div id="selected-seats-list" class="badge-list">
+                        <em class="no-selection-text">None selected</em>
+                    </div>
+                </div>
+                <hr class="summary-divider">
+                <div class="summary-price-row">
+                    <span>Total Tickets:</span>
+                    <strong id="ticket-count">0</strong>
+                </div>
+                <div class="summary-price-row total">
+                    <span>Total Price:</span>
+                    <strong id="total-price">$0.00</strong>
+                </div>
+            </div>
+
+            <button id="book-btn" class="btn btn-primary btn-block btn-large mt-3" disabled onclick="confirmBooking()">
+                <i class="fa-solid fa-check-double"></i> Confirm Booking
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const showId = {{ show.id }};
+    const seatPrice = {{ show.price }};
+    let selectedSeats = [];
+
+    function toggleSeat(seatElement) {
+        const seatId = seatElement.getAttribute('data-seat-id');
+        
+        if (seatElement.classList.contains('selected')) {
+            seatElement.classList.remove('selected');
+            selectedSeats = selectedSeats.filter(id => id !== seatId);
+        } else {
+            // Limit booking to 8 seats per order
+            if (selectedSeats.length >= 8) {
+                alert('You can book a maximum of 8 seats at once.');
+                return;
+            }
+            seatElement.classList.add('selected');
+            selectedSeats.push(seatId);
+        }
+        
+        updateSummary();
+    }
+
+    function updateSummary() {
+        const listContainer = document.getElementById('selected-seats-list');
+        const countSpan = document.getElementById('ticket-count');
+        const priceSpan = document.getElementById('total-price');
+        const bookBtn = document.getElementById('book-btn');
+        
+        if (selectedSeats.length === 0) {
+            listContainer.innerHTML = '<em class="no-selection-text">None selected</em>';
+            countSpan.textContent = '0';
+            priceSpan.textContent = '$0.00';
+            bookBtn.disabled = true;
+        } else {
+            // Format labels for user display (e.g. A-3 -> A3)
+            listContainer.innerHTML = selectedSeats.map(id => {
+                const parts = id.split('-');
+                return `<span class="seat-badge">${parts[0]}${parts[1]}</span>`;
+            }).join('');
+            
+            countSpan.textContent = selectedSeats.length;
+            const total = selectedSeats.length * seatPrice;
+            priceSpan.textContent = `$${total.toFixed(2)}`;
+            bookBtn.disabled = false;
+        }
+    }
+
+    function confirmBooking() {
+        if (selectedSeats.length === 0) return;
+        
+        const bookBtn = document.getElementById('book-btn');
+        bookBtn.disabled = true;
+        bookBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+        
+        fetch('/api/book', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                show_id: showId,
+                seats: selectedSeats
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = `/booking/${data.booking_id}`;
+            } else {
+                alert(data.message || 'An error occurred during booking.');
+                bookBtn.disabled = false;
+                bookBtn.innerHTML = '<i class="fa-solid fa-check-double"></i> Confirm Booking';
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('A network error occurred. Please try again.');
+            bookBtn.disabled = false;
+            bookBtn.innerHTML = '<i class="fa-solid fa-check-double"></i> Confirm Booking';
+        });
+    }
+</script>
+{% endblock %}

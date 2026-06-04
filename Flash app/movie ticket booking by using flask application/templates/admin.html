@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+
+{% block title %}Veloce Cinema - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="section-header">
+        <h1>Admin Control Panel</h1>
+        <p>Manage catalog movies, configure theatre show schedules, and audit customer bookings.</p>
+    </div>
+
+    <!-- Admin Tabs -->
+    <div class="admin-tabs">
+        <button class="admin-tab active" onclick="switchAdminTab('movies')"><i class="fa-solid fa-film"></i> Movies</button>
+        <button class="admin-tab" onclick="switchAdminTab('shows')"><i class="fa-solid fa-clock"></i> Showtimes</button>
+        <button class="admin-tab" onclick="switchAdminTab('bookings')"><i class="fa-solid fa-receipt"></i> Bookings Audit</button>
+    </div>
+
+    <!-- Movies Tab Content -->
+    <div id="tab-movies" class="admin-tab-content active">
+        <div class="admin-grid-layout">
+            <!-- Movie list -->
+            <div class="admin-list-card">
+                <h3>Current Movies</h3>
+                <div class="admin-table-wrapper">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Poster</th>
+                                <th>Title</th>
+                                <th>Genre</th>
+                                <th>Duration</th>
+                                <th>Rating</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for movie in movies %}
+                            <tr>
+                                <td><img src="{{ url_for('static', filename='img/' + movie.poster_path) }}" alt="" class="table-poster"></td>
+                                <td><strong>{{ movie.title }}</strong></td>
+                                <td>{{ movie.genre }}</td>
+                                <td>{{ movie.duration }} min</td>
+                                <td><i class="fa-solid fa-star text-gold"></i> {{ movie.rating }}</td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('admin_delete_movie', movie_id=movie.id) }}" onsubmit="return confirm('Are you sure? This will delete all associated shows and bookings!');">
+                                        <button type="submit" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Add Movie Form -->
+            <div class="admin-form-card">
+                <h3>Add New Movie</h3>
+                <form method="POST" action="{{ url_for('admin_add_movie') }}" class="admin-form">
+                    <div class="form-group">
+                        <label>Movie Title</label>
+                        <input type="text" name="title" required placeholder="e.g. Inception">
+                    </div>
+                    <div class="form-group">
+                        <label>Genre</label>
+                        <input type="text" name="genre" required placeholder="e.g. Sci-Fi / Action">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label>Duration (mins)</label>
+                            <input type="number" name="duration" required min="1" placeholder="120">
+                        </div>
+                        <div class="form-group half">
+                            <label>Rating (0-10)</label>
+                            <input type="number" name="rating" required step="0.1" min="0" max="10" placeholder="8.5">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Poster Image Filename</label>
+                        <input type="text" name="poster_path" placeholder="e.g. poster_interstellar.png">
+                    </div>
+                    <div class="form-group">
+                        <label>Description / Synopsis</label>
+                        <textarea name="description" rows="4" required placeholder="Enter synopsis..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-plus"></i> Add Movie</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shows Tab Content -->
+    <div id="tab-shows" class="admin-tab-content">
+        <div class="admin-grid-layout">
+            <!-- Shows list -->
+            <div class="admin-list-card">
+                <h3>Scheduled Showtimes</h3>
+                <div class="admin-table-wrapper">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Movie</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Hall</th>
+                                <th>Price</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for show in shows %}
+                            <tr>
+                                <td><strong>{{ show.movie.title }}</strong></td>
+                                <td>{{ show.show_date }}</td>
+                                <td>{{ show.show_time }}</td>
+                                <td>{{ show.hall }}</td>
+                                <td>${{ "%.2f" | format(show.price) }}</td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('admin_delete_show', show_id=show.id) }}" onsubmit="return confirm('Are you sure? This will delete all associated bookings!');">
+                                        <button type="submit" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Add Show Form -->
+            <div class="admin-form-card">
+                <h3>Schedule Showtime</h3>
+                <form method="POST" action="{{ url_for('admin_add_show') }}" class="admin-form">
+                    <div class="form-group">
+                        <label>Select Movie</label>
+                        <div class="role-selector-wrapper">
+                            <select name="movie_id" required>
+                                {% for movie in movies %}
+                                <option value="{{ movie.id }}">{{ movie.title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label>Show Date</label>
+                            <input type="date" name="show_date" required id="show_date_input">
+                        </div>
+                        <div class="form-group half">
+                            <label>Show Time</label>
+                            <input type="time" name="show_time" required placeholder="e.g. 19:30">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label>Hall Name</label>
+                            <input type="text" name="hall" required placeholder="e.g. Screen 1">
+                        </div>
+                        <div class="form-group half">
+                            <label>Ticket Price ($)</label>
+                            <input type="number" name="price" required step="0.01" min="1" placeholder="12.50">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-calendar-plus"></i> Schedule Show</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bookings Tab Content -->
+    <div id="tab-bookings" class="admin-tab-content">
+        <div class="admin-list-card wide">
+            <h3>Audit Bookings</h3>
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Booking ID</th>
+                            <th>Customer</th>
+                            <th>Movie</th>
+                            <th>Showtime</th>
+                            <th>Hall</th>
+                            <th>Seats Booked</th>
+                            <th>Total Price</th>
+                            <th>Date Booked</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in bookings %}
+                        <tr>
+                            <td>#VC-{{ "%05d" | format(booking.id) }}</td>
+                            <td><strong>{{ booking.user.username }}</strong> ({{ booking.user.email }})</td>
+                            <td>{{ booking.show.movie.title }}</td>
+                            <td>{{ booking.show.show_date }} @ {{ booking.show.show_time }}</td>
+                            <td>{{ booking.show.hall }}</td>
+                            <td>
+                                {% for ticket in booking.tickets %}
+                                    <span class="seat-badge-small">{{ ticket.seat_row }}{{ ticket.seat_num }}</span>
+                                {% endfor %}
+                            </td>
+                            <td><strong class="text-glow-green">${{ "%.2f" | format(booking.total_price) }}</strong></td>
+                            <td>{{ booking.booking_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Set default show date to today
+    document.getElementById('show_date_input').value = new Date().toISOString().split('T')[0];
+
+    function switchAdminTab(tabName) {
+        // Toggle tab buttons
+        const tabs = document.querySelectorAll('.admin-tab');
+        tabs.forEach(tab => {
+            if (tab.getAttribute('onclick').includes(tabName)) {
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
+            }
+        });
+
+        // Toggle tab content
+        const contents = document.querySelectorAll('.admin-tab-content');
+        contents.forEach(content => {
+            if (content.id === `tab-${tabName}`) {
+                content.classList.add('active');
+            } else {
+                content.classList.remove('active');
+            }
+        });
+    }
+</script>
+{% endblock %}

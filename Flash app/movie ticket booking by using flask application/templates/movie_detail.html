@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Veloce Cinema - {{ movie.title }}{% endblock %}
+
+{% block content %}
+<div class="movie-detail-container">
+    <a href="{{ url_for('home') }}" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Now Showing</a>
+    
+    <div class="movie-backdrop" style="background-image: linear-gradient(to bottom, rgba(13, 14, 18, 0.4) 0%, rgba(13, 14, 18, 0.95) 100%), url('{{ url_for('static', filename='img/' + movie.poster_path) }}');"></div>
+
+    <div class="movie-detail-main">
+        <div class="movie-detail-poster">
+            <img src="{{ url_for('static', filename='img/' + movie.poster_path) }}" alt="{{ movie.title }} Poster">
+        </div>
+        
+        <div class="movie-detail-info">
+            <div class="movie-detail-meta">
+                <span class="genre-badge">{{ movie.genre }}</span>
+                <span class="meta-item"><i class="fa-regular fa-clock"></i> {{ movie.duration }} Minutes</span>
+                <span class="meta-item"><i class="fa-solid fa-star text-gold"></i> {{ movie.rating }} / 10</span>
+            </div>
+            
+            <h1 class="movie-detail-title">{{ movie.title }}</h1>
+            
+            <div class="movie-description">
+                <h3>Synopsis</h3>
+                <p>{{ movie.description }}</p>
+            </div>
+            
+            <div class="movie-attributes">
+                <div class="attribute-item">
+                    <strong>Director:</strong> <span>Christopher Nolan (Mock)</span>
+                </div>
+                <div class="attribute-item">
+                    <strong>Cast:</strong> <span>Matthew McConaughey, Anne Hathaway, Jessica Chastain (Mock)</span>
+                </div>
+                <div class="attribute-item">
+                    <strong>Release Date:</strong> <span>May 27, 2026</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="showtime-section" id="showtimes">
+        <h2>Select Showtime</h2>
+        {% if shows %}
+            <div class="showtimes-container">
+                {% set dates = [] %}
+                {% for show in shows %}
+                    {% if show.show_date not in dates %}
+                        {% set _ = dates.append(show.show_date) %}
+                    {% endif %}
+                {% endfor %}
+                
+                {% for date in dates %}
+                    <div class="show-date-group">
+                        <h3 class="show-date-heading"><i class="fa-solid fa-calendar-day"></i> {{ date }}</h3>
+                        <div class="show-time-buttons">
+                            {% for show in shows %}
+                                {% if show.show_date == date %}
+                                    <div class="showtime-card">
+                                        <div class="hall-info">{{ show.hall }}</div>
+                                        <div class="show-time">{{ show.show_time }}</div>
+                                        <div class="show-price">${{ "%.2f" | format(show.price) }}</div>
+                                        <a href="{{ url_for('book_seats', show_id=show.id) }}" class="btn btn-primary btn-sm btn-block">
+                                            <i class="fa-solid fa-couch"></i> Select Seats
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-showtimes">
+                <i class="fa-solid fa-calendar-xmark"></i>
+                <p>No showtimes available for this movie currently. Check back later!</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

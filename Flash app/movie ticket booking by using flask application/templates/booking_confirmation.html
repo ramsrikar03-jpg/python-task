@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Veloce Cinema - Booking Confirmed{% endblock %}
+
+{% block content %}
+<div class="confirmation-container">
+    <div class="success-header">
+        <div class="success-icon"><i class="fa-solid fa-circle-check"></i></div>
+        <h1>Booking Successful!</h1>
+        <p>Your seats are confirmed. Show this digital ticket at the cinema entrance.</p>
+    </div>
+
+    <!-- Stylized Movie Ticket -->
+    <div class="ticket-stub-wrapper">
+        <div class="ticket-stub">
+            <div class="ticket-left">
+                <div class="ticket-movie-title">{{ booking.show.movie.title }}</div>
+                <div class="ticket-genre">{{ booking.show.movie.genre }}</div>
+                
+                <div class="ticket-info-grid">
+                    <div class="ticket-info-item">
+                        <span class="label">Date</span>
+                        <span class="value">{{ booking.show.show_date }}</span>
+                    </div>
+                    <div class="ticket-info-item">
+                        <span class="label">Time</span>
+                        <span class="value">{{ booking.show.show_time }}</span>
+                    </div>
+                    <div class="ticket-info-item">
+                        <span class="label">Hall</span>
+                        <span class="value">{{ booking.show.hall }}</span>
+                    </div>
+                    <div class="ticket-info-item">
+                        <span class="label">Seats</span>
+                        <span class="value">
+                            {% for ticket in booking.tickets %}
+                                {{ ticket.seat_row }}{{ ticket.seat_num }}{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="ticket-footer">
+                    <div class="ticket-price">
+                        <span class="label">Total Paid</span>
+                        <span class="value">${{ "%.2f" | format(booking.total_price) }}</span>
+                    </div>
+                    <div class="ticket-order-id">
+                        <span class="label">Order ID</span>
+                        <span class="value">#VC-{{ "%05d" | format(booking.id) }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="ticket-divider">
+                <div class="notch top"></div>
+                <div class="dashed-line"></div>
+                <div class="notch bottom"></div>
+            </div>
+            
+            <div class="ticket-right">
+                <div class="ticket-brand">
+                    <i class="fa-solid fa-ticket-simple"></i> VC
+                </div>
+                <div class="barcode-container" title="Digital Barcode">
+                    <div class="barcode"></div>
+                    <div class="barcode-number">VC-{{ "%05d" | format(booking.id) }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="confirmation-actions">
+        <a href="{{ url_for('home') }}" class="btn btn-outline"><i class="fa-solid fa-house"></i> Home</a>
+        <a href="{{ url_for('profile') }}" class="btn btn-primary"><i class="fa-solid fa-user-astronaut"></i> My Bookings</a>
+    </div>
+</div>
+{% endblock %}

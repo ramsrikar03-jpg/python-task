@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Movie Booking AI Assistant</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/chatbot.css') }}">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- Sidebar -->
+
+        <div class="sidebar">
+
+            <h2>🎬 Movie AI</h2>
+
+            <div class="sidebar-section">
+
+                <h3>Quick Help</h3>
+
+                <p>🎬 Available Movies</p>
+                <p>🕒 Show Timings</p>
+                <p>🏢 Theaters</p>
+                <p>🎟️ Booking Help</p>
+
+            </div>
+
+            <div class="tips">
+
+                <h3>Try Asking</h3>
+
+                <p>• Show all movies</p>
+                <p>• Tell me about Interstellar Odyssey</p>
+                <p>• Show showtimes</p>
+                <p>• List halls / screens</p>
+                <p>• Sci-Fi movies</p>
+                <p>• Show bookings</p>
+
+            </div>
+
+        </div>
+
+        <!-- Chat Section -->
+
+        <div class="chat-section">
+
+            <div class="chat-header">
+                🎥 Movie Booking AI Assistant
+            </div>
+
+            <div id="chat-box" class="chat-box">
+
+                <div class="bot-message">
+                    Welcome to the Movie Booking AI Assistant.<br><br>
+
+                    Connected to MySQL database <strong>movie_ticket_booking</strong>.
+                    Ask about movies, shows, halls, bookings, tickets, or schema.
+                    Read-only — no add, update, delete, or booking actions.
+                </div>
+
+            </div>
+
+            <div class="chat-input">
+
+                <input
+                    type="text"
+                    id="message"
+                    placeholder="Ask about movies, theaters, showtimes..."
+                    autocomplete="off"
+                >
+
+                <button onclick="sendMessage()">
+                    Send
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+
+</body>
+
+</html>
